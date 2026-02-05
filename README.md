@@ -25,33 +25,39 @@ Whether you're managing a small office network or a large enterprise infrastruct
 ## ✨ Features
 
 ### 🔍 Core Monitoring
+
 - **Real-time Network Monitoring** - Continuous monitoring of network nodes and hosts
 - **Ping-based Health Checks** - Lightweight ICMP ping monitoring for quick responsiveness
 - **Multi-node Support** - Monitor multiple network nodes simultaneously
 - **Availability Tracking** - Historical data on node uptime and downtime
 
 ### 📊 Analytics & Visualization
+
 - **Interactive Dashboards** - Real-time charts and metrics visualization
 - **Network Health Summary** - Quick overview of network status
 - **Node Availability Charts** - Visual representation of uptime trends
 - **Performance Metrics** - Detailed statistics and analytics
 
 ### 🚨 Alerts & Notifications
+
 - **Intelligent Alerting** - Smart notifications for network anomalies
 - **Alert Management** - Configurable alert thresholds and responses
 - **Alert History** - Track and review past alerts
 
 ### 🤖 Predictive Capabilities
+
 - **Failure Prediction** - ML-based prediction of potential network failures
 - **Trend Analysis** - Identify patterns in network behavior
 - **Proactive Maintenance** - Get ahead of issues before they impact users
 
 ### 💾 Data Management
+
 - **Persistent Storage** - Store monitoring data for historical analysis
 - **Logging** - Comprehensive system logging for debugging
 - **Export Capabilities** - Export data for further analysis
 
 ### 🎨 User Interface
+
 - **Intuitive GUI** - Built with PySide6 for a modern, responsive interface
 - **Real-time Updates** - Live data refresh without page reloads
 - **Cross-platform** - Works on Windows, macOS, and Linux
@@ -61,6 +67,7 @@ Whether you're managing a small office network or a large enterprise infrastruct
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - **Python 3.11** or higher
 - **pip** (Python package manager)
 - Network connectivity
@@ -69,23 +76,27 @@ Whether you're managing a small office network or a large enterprise infrastruct
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/i-m-vineet2001/Network-Monitoring-Predictive-Failure-System.git
    cd Network-Monitoring-Predictive-Failure-System
    ```
 
 2. **Create a virtual environment**
+
    ```bash
    python3 -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
 3. **Install dependencies**
+
    ```bash
    pip install -r requirements.txt
    ```
 
 4. **Configure the system**
+
    ```bash
    # Edit config/config.yaml with your network settings
    nano config/config.yaml
@@ -107,6 +118,7 @@ python src/main.py
 ```
 
 The GUI will launch with the main dashboard showing:
+
 - Network health status
 - Active node monitoring
 - Real-time performance metrics
@@ -118,9 +130,9 @@ Edit `config/config.yaml` to customize:
 
 ```yaml
 monitoring:
-  interval: 5              # Monitoring interval in seconds
-  timeout: 2              # Ping timeout in seconds
-  retry_count: 3          # Number of retries
+  interval: 5 # Monitoring interval in seconds
+  timeout: 2 # Ping timeout in seconds
+  retry_count: 3 # Number of retries
 
 nodes:
   - name: "Router"
@@ -131,8 +143,8 @@ nodes:
     ip: "192.168.1.200"
 
 alerts:
-  failure_threshold: 3    # Consecutive failures before alert
-  recovery_threshold: 2   # Consecutive successes to clear alert
+  failure_threshold: 3 # Consecutive failures before alert
+  recovery_threshold: 2 # Consecutive successes to clear alert
 ```
 
 ### Monitoring Nodes
@@ -187,20 +199,20 @@ Network-Monitoring-Predictive-Failure-System/
 ```yaml
 # Monitoring settings
 monitoring:
-  interval: 5              # Check interval (seconds)
-  timeout: 2              # Response timeout (seconds)
-  retry_count: 3          # Failed attempts before alert
-  
+  interval: 5 # Check interval (seconds)
+  timeout: 2 # Response timeout (seconds)
+  retry_count: 3 # Failed attempts before alert
+
 # Nodes to monitor
 nodes:
   - name: "Node Name"
     ip: "x.x.x.x"
-    
+
 # Alert thresholds
 alerts:
   failure_threshold: 3
   recovery_threshold: 2
-  
+
 # Logging
 logging:
   level: INFO
@@ -210,6 +222,7 @@ logging:
 ### GUI Settings
 
 Configure via the application settings panel:
+
 - Refresh rate
 - Chart update interval
 - Alert notification style
@@ -220,6 +233,7 @@ Configure via the application settings panel:
 ## 📊 Performance Metrics
 
 The system tracks and displays:
+
 - **Response Time** - Average ping response time
 - **Packet Loss** - Percentage of failed packets
 - **Availability** - Uptime percentage over time
@@ -231,12 +245,14 @@ The system tracks and displays:
 ## 🚨 Alert System
 
 ### Alert Types
+
 - **Node Failure** - Node became unreachable
 - **High Latency** - Response time exceeds threshold
 - **Intermittent Failures** - Inconsistent connectivity
 - **Recovery** - Node came back online
 
 ### Alert Actions
+
 - Visual notifications in GUI
 - Log entries
 - Customizable thresholds
@@ -273,13 +289,14 @@ The system tracks and displays:
 ## 📦 Dependencies
 
 See `requirements.txt` for complete list:
-- **PySide6** - Modern GUI framework
+
+- **PySide6** - Modern GUI framework with Qt Charts for visualizations
 - **PyYAML** - Configuration management
 - **Pandas** - Data analysis
-- **Matplotlib** - Chart generation
 - **NumPy** - Numerical operations
 
 Install all dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -289,28 +306,36 @@ pip install -r requirements.txt
 ## 🐛 Troubleshooting
 
 ### Issue: Permission Denied (Ping)
+
 **Solution:** Run with elevated privileges or configure ICMP permissions
+
 ```bash
 sudo python src/main.py
 ```
 
 ### Issue: GUI Not Launching
+
 **Solution:** Ensure PySide6 is installed correctly
+
 ```bash
 pip install --upgrade PySide6
 ```
 
 ### Issue: Configuration Not Loading
+
 **Solution:** Verify YAML syntax and file path
+
 ```bash
 python -m yaml config/config.yaml
 ```
 
 ### Issue: High CPU Usage
+
 **Solution:** Increase monitoring interval in configuration
+
 ```yaml
 monitoring:
-  interval: 10  # Increase from 5 to 10 seconds
+  interval: 10 # Increase from 5 to 10 seconds
 ```
 
 ---
@@ -318,21 +343,25 @@ monitoring:
 ## 📈 Use Cases
 
 ### 🏢 Enterprise Networks
+
 - Monitor critical infrastructure
 - Proactive failure detection
 - SLA compliance tracking
 
 ### 🖥️ Data Centers
+
 - Real-time server health monitoring
 - Automated failure alerts
 - Performance analytics
 
 ### 🏠 Home Networks
+
 - Track internet connectivity
 - Monitor IoT devices
 - Network troubleshooting
 
 ### 🔬 Network Research
+
 - Collect network statistics
 - Analyze failure patterns
 - Predictive modeling
@@ -359,6 +388,7 @@ Contributions are welcome! Here's how you can help:
 5. **Open** a Pull Request
 
 ### Development Setup
+
 ```bash
 git clone https://github.com/i-m-vineet2001/Network-Monitoring-Predictive-Failure-System.git
 cd Network-Monitoring-Predictive-Failure-System
@@ -387,6 +417,7 @@ of this software and associated documentation files...
 ## 👨‍💼 About the Author
 
 **Vineet Patel**
+
 - Email: [your-email@example.com]
 - GitHub: [@i-m-vineet2001](https://github.com/i-m-vineet2001)
 - LinkedIn: [Your LinkedIn Profile]
