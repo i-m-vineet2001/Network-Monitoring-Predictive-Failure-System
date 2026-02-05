@@ -429,7 +429,7 @@ of this software and associated documentation files...
 For issues, questions, or suggestions:
 
 - **Issues** - [GitHub Issues](https://github.com/i-m-vineet2001/Network-Monitoring-Predictive-Failure-System/issues)
-- **Email** - your-email@example.com
+- **Email** - patelvineet71@gmail.com
 - **Documentation** - See [WIKI](https://github.com/i-m-vineet2001/Network-Monitoring-Predictive-Failure-System/wiki)
 
 ---
