@@ -1,147 +1,198 @@
+
+
+# # gui/data.py
+# import os
+
+# # gui/ → root/ → logs/log.txt
+# ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# LOG_FILE = os.path.join(ROOT_DIR, "logs", "log.txt")
+
+
+# def _parse_kv(text: str) -> str:
+#     return text.split("=", 1)[1].strip() if "=" in text else text.strip()
+
+
+# def read_latest_node_states() -> dict:
+#     """Return the most recent reading per node."""
+#     states = {}
+#     if not os.path.exists(LOG_FILE):
+#         return states
+
+#     with open(LOG_FILE, "r") as f:
+#         for line in f:
+#             parts = [p.strip() for p in line.split("|")]
+#             if len(parts) != 7:
+#                 continue
+#             _, node, ip, state, net, lat, fails = parts
+#             states[node] = {
+#                 "ip": ip,
+#                 "network_type": _parse_kv(net),
+#                 "state": state,
+#                 "latency": _parse_kv(lat),
+#                 "fails": _parse_kv(fails),
+#             }
+#     return states
+
+
+# def get_node_latency_history(node_name: str) -> list:
+#     history = []
+#     if not os.path.exists(LOG_FILE):
+#         return history
+
+#     with open(LOG_FILE, "r") as f:
+#         for line in f:
+#             parts = [p.strip() for p in line.split("|")]
+#             if len(parts) != 7 or parts[1] != node_name:
+#                 continue
+#             try:
+#                 history.append(float(_parse_kv(parts[5])))
+#             except (ValueError, TypeError):
+#                 pass
+
+#     return history[-50:]
+
+
+# def get_global_latency_history() -> list:
+#     ts_map = {}
+#     if not os.path.exists(LOG_FILE):
+#         return []
+
+#     with open(LOG_FILE, "r") as f:
+#         for line in f:
+#             parts = [p.strip() for p in line.split("|")]
+#             if len(parts) != 7:
+#                 continue
+#             try:
+#                 lat = float(_parse_kv(parts[5]))
+#                 ts_map.setdefault(parts[0], []).append(lat)
+#             except (ValueError, TypeError):
+#                 pass
+
+#     return [sum(v) / len(v) for v in (ts_map[t] for t in sorted(ts_map))][-50:]
+
+
+# def get_node_state_distribution(node_name: str) -> tuple:
+#     up = degraded = down = 0
+#     if not os.path.exists(LOG_FILE):
+#         return up, degraded, down
+
+#     with open(LOG_FILE, "r") as f:
+#         for line in f:
+#             parts = [p.strip() for p in line.split("|")]
+#             if len(parts) != 7 or parts[1] != node_name:
+#                 continue
+#             s = parts[3]
+#             if s == "UP":
+#                 up += 1
+#             elif s == "DEGRADED":
+#                 degraded += 1
+#             elif s == "DOWN":
+#                 down += 1
+
+#     return up, degraded, down
+
+
+
+
+
+
+
+
 # gui/data.py
 import os
 
-LOG_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs", "log.txt")
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LOG_FILE = os.path.join(ROOT_DIR, "logs", "log.txt")
 
 
-def parse_key_value(text):
-    if "=" not in text:
-        return text.strip()
-
-    return text.split("=", 1)[1].strip()
+def _parse_kv(text: str) -> str:
+    return text.split("=", 1)[1].strip() if "=" in text else text.strip()
 
 
-# Latest state per node
-def read_latest_node_states():
+def _parse_latency(raw: str):
+    """Parse latency string — returns float or None (never the string 'None')."""
+    try:
+        val = _parse_kv(raw)
+        if val.lower() == "none" or val == "":
+            return None
+        return float(val)
+    except (ValueError, TypeError):
+        return None
 
+
+def read_latest_node_states() -> dict:
     states = {}
-
     if not os.path.exists(LOG_FILE):
         return states
 
     with open(LOG_FILE, "r") as f:
         for line in f:
             parts = [p.strip() for p in line.split("|")]
-
             if len(parts) != 7:
                 continue
-
-            # CORRECT ORDER: timestamp | node | ip | state | type | latency | fails
-            timestamp = parts[0]
-            node = parts[1]
-            ip = parts[2]
-            state = parts[3]
-            network_type = parse_key_value(parts[4])
-            latency = parse_key_value(parts[5])
-            fails = parse_key_value(parts[6])
-
+            _, node, ip, state, net, lat, fails = parts
             states[node] = {
                 "ip": ip,
-                "network_type": network_type,
+                "network_type": _parse_kv(net),
                 "state": state,
-                "latency": latency,
-                "fails": fails,
+                "latency": _parse_latency(lat),  # ← float or None
+                "fails": _parse_kv(fails),
             }
-
     return states
 
 
-# Latency history per node
-def get_node_latency_history(node_name):
-
+def get_node_latency_history(node_name: str) -> list:
     history = []
-
     if not os.path.exists(LOG_FILE):
         return history
 
     with open(LOG_FILE, "r") as f:
         for line in f:
             parts = [p.strip() for p in line.split("|")]
-
-            if len(parts) != 7:
+            if len(parts) != 7 or parts[1] != node_name:
                 continue
-
-            node = parts[1]
-
-            if node != node_name:
-                continue
-
-            latency = parse_key_value(parts[5])
-
-            try:
-                history.append(float(latency))
-            except:
-                pass
+            val = _parse_latency(parts[5])
+            if val is not None:  # skip None entries
+                history.append(val)
 
     return history[-50:]
 
 
-
-# Global latency history
-def get_global_latency_history():
-
-    timestamp_map = {}
-
+def get_global_latency_history() -> list:
+    ts_map = {}
     if not os.path.exists(LOG_FILE):
         return []
 
     with open(LOG_FILE, "r") as f:
         for line in f:
             parts = [p.strip() for p in line.split("|")]
-
             if len(parts) != 7:
                 continue
+            val = _parse_latency(parts[5])
+            if val is not None:
+                ts_map.setdefault(parts[0], []).append(val)
 
-            timestamp = parts[0]
-            latency = parse_key_value(parts[5])
-
-            try:
-                latency = float(latency)
-            except:
-                continue
-
-            timestamp_map.setdefault(timestamp, []).append(latency)
-
-    history = []
-
-    for t in sorted(timestamp_map.keys()):
-        values = timestamp_map[t]
-        history.append(sum(values) / len(values))
-
-    return history[-50:]
+    if not ts_map:
+        return []
+    return [sum(v) / len(v) for v in (ts_map[t] for t in sorted(ts_map))][-50:]
 
 
-
-# State distribution per node
-def get_node_state_distribution(node_name):
-
-    up = 0
-    degraded = 0
-    down = 0
-
+def get_node_state_distribution(node_name: str) -> tuple:
+    up = degraded = down = 0
     if not os.path.exists(LOG_FILE):
         return up, degraded, down
 
     with open(LOG_FILE, "r") as f:
         for line in f:
             parts = [p.strip() for p in line.split("|")]
-
-            if len(parts) != 7:
+            if len(parts) != 7 or parts[1] != node_name:
                 continue
-
-            node = parts[1]
-            state = parts[3]
-
-            if node != node_name:
-                continue
-
-            if state == "UP":
+            s = parts[3]
+            if s == "UP":
                 up += 1
-
-            elif state == "DEGRADED":
+            elif s == "DEGRADED":
                 degraded += 1
-
-            elif state == "DOWN":
+            elif s == "DOWN":
                 down += 1
 
     return up, degraded, down
