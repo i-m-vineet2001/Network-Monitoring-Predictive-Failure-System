@@ -11,7 +11,6 @@ def ping_node(ip: str, ping_blocked: bool = False) -> dict:
         cmd = ["ping", "-n", "1", "-w", "1000", ip]  # -w in ms on Windows
     elif system == "darwin":
         # macOS: -W is in MILLISECONDS (not seconds like Linux!)
-        # -W 2 = 2ms timeout → always fails → latency None
         # -W 2000 = 2 second timeout → correct
         cmd = ["ping", "-c", "1", "-W", "2000", ip]
     else:

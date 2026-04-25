@@ -11,7 +11,7 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT_DIR)  # → gives access to gui/
 sys.path.insert(
     0, os.path.join(ROOT_DIR, "src")
-)  # → gives access to db/, config, monitor
+)  
 
 from dotenv import load_dotenv
 
