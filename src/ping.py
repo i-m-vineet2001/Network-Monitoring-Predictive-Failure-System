@@ -5,6 +5,10 @@ import re
 
 
 def ping_node(ip: str, ping_blocked: bool = False) -> dict:
+    if ping_blocked:
+        # For devices that don't respond to ping, simulate success with no latency
+        return {"success": True, "latency": None, "error": "ping_blocked"}
+
     system = platform.system().lower()
 
     if system == "windows":

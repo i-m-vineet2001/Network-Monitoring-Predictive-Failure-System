@@ -1,8 +1,3 @@
-
-
-
-
-
 # import sys, os
 
 # # gui/ → root/,  src/ for db imports
@@ -190,7 +185,6 @@
 #         self.signup_window.show()
 
 
-
 import sys, os
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -249,7 +243,9 @@ class LoginWindow(QWidget):
         # Header
         icon = QLabel("🌐")
         icon.setAlignment(Qt.AlignCenter)
-        icon.setStyleSheet("font-size: 38px; background: transparent; border: none;")
+        icon.setStyleSheet(
+            "font-size: 38px; color: #4f8ef7; background: transparent; border: none;"
+        )
 
         title = QLabel("Network Monitor")
         title.setAlignment(Qt.AlignCenter)

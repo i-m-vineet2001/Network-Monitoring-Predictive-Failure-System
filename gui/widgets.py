@@ -1,4 +1,3 @@
-
 # gui/widgets.py
 import sys, os
 
@@ -27,15 +26,17 @@ _DOT_COLORS = {
     "DOWN": DANGER,
 }
 
+# ── Data roles ────────────────────────────────────────────
 _ROLE_STATE = Qt.UserRole
 _ROLE_LATENCY = Qt.UserRole + 1
 _ROLE_DISPLAY = Qt.UserRole + 2
+_ROLE_ML_PROB = Qt.UserRole + 3  # ← NEW: stores ml_probability float
 
 
 class _NodeDelegate(QStyledItemDelegate):
     DOT_R = 5
     PAD_L = 14
-    PAD_V = 10
+    PAD_V = 8
 
     def paint(self, painter: QPainter, option, index):
         painter.save()
@@ -44,7 +45,7 @@ class _NodeDelegate(QStyledItemDelegate):
         is_hovered = bool(option.state & QStyle.State_MouseOver)
         is_selected = bool(option.state & QStyle.State_Selected)
 
-        # ── background: always draw a card box ──
+        # ── background card ──────────────────────────────
         if is_selected:
             painter.setBrush(QColor("#1e2a45"))
             painter.setPen(QColor(ACCENT))
@@ -52,42 +53,54 @@ class _NodeDelegate(QStyledItemDelegate):
             painter.setBrush(QColor("#f5c518"))
             painter.setPen(Qt.NoPen)
         else:
-            # faded card — same dark card colour as rest of UI
             painter.setBrush(QColor("#1a1d27"))
             painter.setPen(QColor(BORDER))
 
         painter.setRenderHint(QPainter.Antialiasing)
         painter.drawRoundedRect(rect.adjusted(2, 1, -2, -1), 8, 8)
 
+        # ── read item data ────────────────────────────────
         state = index.data(_ROLE_STATE) or "UNKNOWN"
         latency = index.data(_ROLE_LATENCY) or None
         display = index.data(_ROLE_DISPLAY) or index.data(Qt.DisplayRole) or ""
 
-        dot_color = QColor(_DOT_COLORS.get(state, TEXT_MUTED))
+        # ── FIX: read ml_probability from role ────────────
+        ml_prob_raw = index.data(_ROLE_ML_PROB)
+        try:
+            ml_prob = float(ml_prob_raw) if ml_prob_raw is not None else None
+        except (TypeError, ValueError):
+            ml_prob = None
 
+        # ── colored status dot ────────────────────────────
+        dot_color = QColor(_DOT_COLORS.get(state, TEXT_MUTED))
         cx = rect.left() + self.PAD_L + self.DOT_R
         cy = rect.top() + rect.height() // 2
 
-        # ── colored dot ──
         painter.setBrush(dot_color)
         painter.setPen(Qt.NoPen)
         painter.drawEllipse(
-            cx - self.DOT_R, cy - self.DOT_R, self.DOT_R * 2, self.DOT_R * 2
+            cx - self.DOT_R,
+            cy - self.DOT_R,
+            self.DOT_R * 2,
+            self.DOT_R * 2,
         )
 
         text_x = cx + self.DOT_R + 10
 
-        # ── node name ──
+        # ── node name ─────────────────────────────────────
         name_font = QFont()
         name_font.setPointSize(12)
         painter.setFont(name_font)
         painter.setPen(QColor("#000000" if is_hovered else TEXT_PRIMARY))
         name_rect = QRect(
-            text_x, rect.top() + self.PAD_V, rect.width() - text_x + rect.left(), 18
+            text_x,
+            rect.top() + self.PAD_V,
+            rect.width() - text_x + rect.left() - 6,
+            18,
         )
         painter.drawText(name_rect, Qt.AlignLeft | Qt.AlignVCenter, display)
 
-        # ── state · latency ──
+        # ── state · latency sub-line ──────────────────────
         sub_font = QFont()
         sub_font.setPointSize(10)
         painter.setFont(sub_font)
@@ -101,14 +114,35 @@ class _NodeDelegate(QStyledItemDelegate):
         sub_rect = QRect(
             text_x,
             rect.top() + self.PAD_V + 20,
-            rect.width() - text_x + rect.left(),
+            rect.width() - text_x + rect.left() - 6,
             16,
         )
         painter.drawText(
-            sub_rect, Qt.AlignLeft | Qt.AlignVCenter, f"{state}  ·  {lat_str}"
+            sub_rect,
+            Qt.AlignLeft | Qt.AlignVCenter,
+            f"{state}  ·  {lat_str}",
         )
 
-        painter.restore()
+        # ── FIX: ML risk badge (drawn BEFORE restore) ─────
+        # Only show when probability > 60% and not hovered (yellow bg hides it)
+        if ml_prob is not None and ml_prob > 0.6 and not is_hovered:
+            risk_font = QFont()
+            risk_font.setPointSize(8)
+            risk_font.setBold(True)
+            painter.setFont(risk_font)
+            painter.setPen(QColor("#9b59b6"))  # purple for AI risk
+
+            # FIX: define risk_rect properly (right side of the item)
+            risk_rect = QRect(
+                rect.right() - 72,  # 72px wide from right edge
+                rect.top() + self.PAD_V + 18,
+                68,  # width
+                14,  # height
+            )
+            painter.drawText(risk_rect, Qt.AlignRight | Qt.AlignVCenter, "⚠ High Risk")
+
+        # ── restore AFTER all drawing is done ─────────────
+        painter.restore()  # FIX: moved to end — was incorrectly placed before ML drawing
 
     def sizeHint(self, option, index):
         return QSize(option.rect.width(), 54)
@@ -141,6 +175,13 @@ class NodeListWidget(QListWidget):
             state = info.get("state", "UNKNOWN")
             latency = info.get("latency", None)
 
+            # FIX: read ml_probability from info and store in item
+            ml_prob = info.get("ml_probability", None)
+            try:
+                ml_prob = float(ml_prob) if ml_prob is not None else None
+            except (TypeError, ValueError):
+                ml_prob = None
+
             parts = node_name.replace("node_", "").split("_")
             display = " ".join(p.capitalize() for p in parts)
 
@@ -148,6 +189,7 @@ class NodeListWidget(QListWidget):
             item.setData(_ROLE_STATE, state)
             item.setData(_ROLE_LATENCY, latency)
             item.setData(_ROLE_DISPLAY, display)
+            item.setData(_ROLE_ML_PROB, ml_prob)  # ← FIX: store ml_prob in item
             item.setSizeHint(QSize(200, 54))
 
             self.addItem(item)
