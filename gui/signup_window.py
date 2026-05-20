@@ -1,5 +1,3 @@
-
-
 import sys, os
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -56,7 +54,9 @@ class SignupWindow(QWidget):
 
         icon = QLabel("✨")
         icon.setAlignment(Qt.AlignCenter)
-        icon.setStyleSheet("font-size: 34px; background: transparent; border: none;")
+        icon.setStyleSheet(
+            "font-size: 34px; color: #4f8ef7; background: transparent; border: none;"
+        )
 
         title = QLabel("Create Account")
         title.setAlignment(Qt.AlignCenter)

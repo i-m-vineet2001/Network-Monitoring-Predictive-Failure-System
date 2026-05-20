@@ -41,8 +41,10 @@ Whether you're managing a small office network or a large enterprise infrastruct
 ### 🚨 Alerts & Notifications
 
 - **Intelligent Alerting** - Smart notifications for network anomalies
-- **Alert Management** - Configurable alert thresholds and responses
-- **Alert History** - Track and review past alerts
+- **Alert Filters** - Type and time-range dropdown filters in the alert panel
+- **Notification Control** - Bell toggle to enable or disable alert popups
+- **History View** - Review recent alert events with severity and latency
+- **AI Alerts** - Predictive failure alerts from ML models
 
 ### 🤖 Predictive Capabilities
 
@@ -55,6 +57,12 @@ Whether you're managing a small office network or a large enterprise infrastruct
 - **Persistent Storage** - Store monitoring data for historical analysis
 - **Logging** - Comprehensive system logging for debugging
 - **Export Capabilities** - Export data for further analysis
+
+### 🛠️ Recent Fixes
+
+- Fixed alert panel bell toggle so notifications can be enabled/disabled reliably
+- Restored alert badge rendering and prevented `main.py` startup crashes
+- Smooth dropdown filter styling added for alert type and time range selection
 
 ### 🎨 User Interface
 
@@ -98,9 +106,11 @@ Whether you're managing a small office network or a large enterprise infrastruct
 4. **Configure the system**
 
    ```bash
-   # Edit config/config.yaml with your network settings
-   nano config/config.yaml
+   nano src/config.py
    ```
+
+   - Update `src/config.py` to define monitored nodes, thresholds, and alert settings.
+   - Optionally use `.env` for environment-specific values loaded by `src/main.py`.
 
 5. **Run the application**
    ```bash
@@ -117,6 +127,12 @@ Whether you're managing a small office network or a large enterprise infrastruct
 python src/main.py
 ```
 
+### Launch GUI Only
+
+```bash
+python src/run_gui.py
+```
+
 The GUI will launch with the main dashboard showing:
 
 - Network health status
@@ -126,25 +142,35 @@ The GUI will launch with the main dashboard showing:
 
 ### Configuration
 
-Edit `config/config.yaml` to customize:
+The application reads settings from `src/config.py`.
 
-```yaml
-monitoring:
-  interval: 5 # Monitoring interval in seconds
-  timeout: 2 # Ping timeout in seconds
-  retry_count: 3 # Number of retries
+Edit `src/config.py` to customize monitored nodes, latency thresholds, and alert behavior.
 
-nodes:
-  - name: "Router"
-    ip: "192.168.1.1"
-  - name: "Server"
-    ip: "192.168.1.100"
-  - name: "Database"
-    ip: "192.168.1.200"
+Example configuration:
 
-alerts:
-  failure_threshold: 3 # Consecutive failures before alert
-  recovery_threshold: 2 # Consecutive successes to clear alert
+```python
+LATENCY_THRESHOLD = 30  # ms threshold for degraded latency
+
+nodes = {
+    "node_1_phone1": {
+        "ip": "192.168.1.33",
+        "state": "UP",
+        "network_type": "wifi",
+        "fail_count": 0,
+        "last_latency": None,
+        "ping_blocked": True,
+        "last_ml_alert": None,
+    },
+    "node_2_laptop": {
+        "ip": "192.168.1.35",
+        "state": "UP",
+        "network_type": "wifi",
+        "fail_count": 0,
+        "last_latency": None,
+        "ping_blocked": False,
+        "last_ml_alert": None,
+    },
+}
 ```
 
 ### Monitoring Nodes
@@ -177,9 +203,6 @@ Network-Monitoring-Predictive-Failure-System/
 │   ├── node_availability_chart.py # Node availability
 │   └── node_pie_chart.py         # Node distribution
 │
-├── config/                       # Configuration files
-│   └── config.yaml               # System configuration
-│
 ├── logs/                         # Log files
 │   └── log.txt                   # Application logs
 │
@@ -192,31 +215,35 @@ Network-Monitoring-Predictive-Failure-System/
 
 ## 🔧 Configuration Guide
 
-### System Configuration
+The system is configured through `src/config.py`.
 
-**File:** `config/config.yaml`
+Edit `src/config.py` to define `LATENCY_THRESHOLD`, monitored `nodes`, and alert-related flags such as `ping_blocked`.
 
-```yaml
-# Monitoring settings
-monitoring:
-  interval: 5 # Check interval (seconds)
-  timeout: 2 # Response timeout (seconds)
-  retry_count: 3 # Failed attempts before alert
+Example configuration:
 
-# Nodes to monitor
-nodes:
-  - name: "Node Name"
-    ip: "x.x.x.x"
+```python
+LATENCY_THRESHOLD = 30  # ms threshold for degraded latency
 
-# Alert thresholds
-alerts:
-  failure_threshold: 3
-  recovery_threshold: 2
-
-# Logging
-logging:
-  level: INFO
-  format: detailed
+nodes = {
+    "node_1_phone1": {
+        "ip": "192.168.1.33",
+        "state": "UP",
+        "network_type": "wifi",
+        "fail_count": 0,
+        "last_latency": None,
+        "ping_blocked": True,
+        "last_ml_alert": None,
+    },
+    "node_2_laptop": {
+        "ip": "192.168.1.35",
+        "state": "UP",
+        "network_type": "wifi",
+        "fail_count": 0,
+        "last_latency": None,
+        "ping_blocked": False,
+        "last_ml_alert": None,
+    },
+}
 ```
 
 ### GUI Settings
@@ -291,9 +318,12 @@ The system tracks and displays:
 See `requirements.txt` for complete list:
 
 - **PySide6** - Modern GUI framework with Qt Charts for visualizations
-- **PyYAML** - Configuration management
-- **Pandas** - Data analysis
-- **NumPy** - Numerical operations
+- **pymongo** - Optional MongoDB logging support
+- **python-dotenv** - Environment variable loading for optional runtime settings
+- **scikit-learn** - Machine learning models for predictive alerts
+- **pandas** - Data analysis and time series handling
+- **matplotlib** - Plotting and chart generation
+- **seaborn** - Statistical data visualization
 
 Install all dependencies:
 
@@ -323,20 +353,11 @@ pip install --upgrade PySide6
 
 ### Issue: Configuration Not Loading
 
-**Solution:** Verify YAML syntax and file path
-
-```bash
-python -m yaml config/config.yaml
-```
+**Solution:** Verify `src/config.py` is valid Python and contains the expected `LATENCY_THRESHOLD` and `nodes` definitions.
 
 ### Issue: High CPU Usage
 
-**Solution:** Increase monitoring interval in configuration
-
-```yaml
-monitoring:
-  interval: 10 # Increase from 5 to 10 seconds
-```
+**Solution:** Reduce the number of active monitored nodes or adjust the polling frequency in application logic to lower resource usage.
 
 ---
 
@@ -446,7 +467,7 @@ For issues, questions, or suggestions:
 
 - [Python Documentation](https://docs.python.org/3/)
 - [PySide6 Documentation](https://doc.qt.io/qtforpython/)
-- [YAML Configuration Guide](https://yaml.org/spec/1.2/spec.html)
+- [Python Documentation](https://docs.python.org/3/)
 - [Network Monitoring Best Practices](https://en.wikipedia.org/wiki/Network_monitoring)
 
 ---

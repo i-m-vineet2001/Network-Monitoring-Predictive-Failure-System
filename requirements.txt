@@ -7,3 +7,10 @@ pymongo>=4.0
 # Load .env files
 python-dotenv>=1.0
 
+# Machine Learning
+scikit-learn>=1.3
+pandas>=2.0
+matplotlib>=3.7
+seaborn>=0.12
+
+

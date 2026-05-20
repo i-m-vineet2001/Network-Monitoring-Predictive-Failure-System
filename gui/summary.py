@@ -1,79 +1,3 @@
-# # gui/summary.py
-
-# from PySide6.QtWidgets import QWidget, QLabel, QHBoxLayout
-
-
-# class HealthSummaryWidget(QWidget):
-#     def __init__(self, parent=None):
-#         super().__init__(parent)
-
-#         layout = QHBoxLayout()
-#         self.setLayout(layout)
-
-#         self.label = QLabel("Loading summary...")
-#         self.label.setStyleSheet("""
-#             font-size: 16px;
-#             font-weight: bold;
-#             padding: 8px;
-#         """)
-
-#         layout.addWidget(self.label)
-
-#     def update_summary(self, states: dict):
-#         if not states:
-#             self.label.setText("No nodes available")
-#             return
-
-#         total = len(states)
-#         up = 0
-#         degraded = 0
-#         down = 0
-#         latency_sum = 0
-#         latency_count = 0
-
-#         for node, info in states.items():
-#             state = info["state"]
-
-#             if state == "UP":
-#                 up += 1
-#             elif state == "DEGRADED":
-#                 degraded += 1
-#             elif state == "DOWN":
-#                 down += 1
-
-#             try:
-#                 latency = float(info["latency"])
-#                 latency_sum += latency
-#                 latency_count += 1
-#             except:
-#                 pass
-
-#         avg_latency = latency_sum / latency_count if latency_count > 0 else 0
-
-#         text = (
-#             f"Nodes: {total}    "
-#             f"UP: {up}    "
-#             f"DEGRADED: {degraded}    "
-#             f"DOWN: {down}    "
-#             f"Avg Latency: {avg_latency:.1f} ms"
-#         )
-
-#         self.label.setText(text)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # gui/summary.py
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QFrame
 from PySide6.QtCore import Qt
@@ -110,7 +34,7 @@ class _StatCard(QFrame):
         icon_lbl = QLabel(icon)
         icon_lbl.setAlignment(Qt.AlignCenter)
         icon_lbl.setStyleSheet(
-            f"font-size: 22px; background: transparent; border: none;"
+            f"font-size: 22px; color: {color}; background: transparent; border: none;"
         )
 
         self.value_lbl = QLabel(value)
@@ -149,8 +73,16 @@ class HealthSummaryWidget(QWidget):
         self._degraded = _StatCard("⚠️", "—", "Degraded", WARNING)
         self._down = _StatCard("🔴", "—", "Offline", DANGER)
         self._latency = _StatCard("⚡", "—", "Avg Latency", ACCENT)
+        self._risk = _StatCard("🧠", "—", "High Risk", TEXT_SECONDARY)
 
-        for card in [self._total, self._up, self._degraded, self._down, self._latency]:
+        for card in [
+            self._total,
+            self._up,
+            self._degraded,
+            self._down,
+            self._latency,
+            self._risk,
+        ]:
             layout.addWidget(card)
 
     def update_summary(self, states: dict):
@@ -160,6 +92,15 @@ class HealthSummaryWidget(QWidget):
         total = len(states)
         up = degraded = down = 0
         lat_sum = lat_cnt = 0
+
+        high_risk = 0
+
+        for n in states.values():
+            try:
+                if float(n.get("ml_probability", 0)) > 0.6:
+                    high_risk += 1
+            except:
+                pass
 
         for info in states.values():
             s = info["state"]
@@ -182,3 +123,9 @@ class HealthSummaryWidget(QWidget):
         self._degraded.set_value(str(degraded), WARNING if degraded else TEXT_SECONDARY)
         self._down.set_value(str(down), DANGER if down else TEXT_SECONDARY)
         self._latency.set_value(avg_lat)
+        if high_risk > 0:
+            color = "#9b59b6"
+        else:
+            color = TEXT_SECONDARY
+
+        self._risk.set_value(str(high_risk), color)
