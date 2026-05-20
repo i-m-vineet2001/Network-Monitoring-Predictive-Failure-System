@@ -12,6 +12,14 @@
 
 </div>
 
+## 📷 Project Screenshot Placeholder
+
+<div align="center">
+
+![Project Screenshot Placeholder](https://via.placeholder.com/800x450.png?text=Upload+your+project+image+here)
+
+</div>
+
 ---
 
 ## 📋 Overview
