@@ -12,7 +12,11 @@
 
 </div>
 
----
+<div align="center">
+
+![Project Screenshot](https://via.placeholder.com/960x320.png?text=Network+Monitoring+Dashboard+Placeholder)
+
+## </div>
 
 ## 📋 Overview
 
@@ -63,6 +67,17 @@ Whether you're managing a small office network or a large enterprise infrastruct
 - Fixed alert panel bell toggle so notifications can be enabled/disabled reliably
 - Restored alert badge rendering and prevented `main.py` startup crashes
 - Smooth dropdown filter styling added for alert type and time range selection
+- Added production-ready simulated node support with Controller heartbeat ingestion
+- Fixed node list auto-scroll on alert refresh and expanded sidebar node panel height
+
+### 🎛️ New Production Behavior
+
+- `src/main.py` now starts:
+  - the real node monitor for `real_nodes`
+  - the Controller server on port `9000`
+  - simulated node clients for all `sim_nodes`
+- Simulated nodes now send real heartbeat JSON to the Controller and generate actual log entries
+- GUI reads `logs/log.txt` from both real and simulated nodes, instead of relying on fallback config-only display
 
 ### 🎨 User Interface
 
@@ -113,9 +128,12 @@ Whether you're managing a small office network or a large enterprise infrastruct
    - Optionally use `.env` for environment-specific values loaded by `src/main.py`.
 
 5. **Run the application**
+
    ```bash
    python src/main.py
    ```
+
+   > Note: The current update automatically starts the Controller and all configured `sim_nodes` when you run `src/main.py`.
 
 ---
 
@@ -126,6 +144,8 @@ Whether you're managing a small office network or a large enterprise infrastruct
 ```bash
 python src/main.py
 ```
+
+> This starts the monitoring engine, the Controller, and all simulated nodes automatically.
 
 ### Launch GUI Only
 
@@ -179,39 +199,6 @@ nodes = {
 2. **Monitor** - Watch real-time status in the dashboard
 3. **Analyze** - Review charts and historical data
 4. **Act** - Respond to alerts and notifications
-
----
-
-## 📁 Project Structure
-
-```
-Network-Monitoring-Predictive-Failure-System/
-├── src/                          # Source code
-│   ├── main.py                   # Application entry point
-│   ├── monitor.py                # Core monitoring logic
-│   ├── ping.py                   # ICMP ping utilities
-│   └── config.py                 # Configuration management
-│
-├── gui/                          # GUI components
-│   ├── gui.py                    # Main window
-│   ├── chart.py                  # Chart visualizations
-│   ├── alerts.py                 # Alert system
-│   ├── data.py                   # Data management
-│   ├── summary.py                # Summary dashboard
-│   ├── widgets.py                # Custom widgets
-│   ├── global_chart.py           # Global metrics
-│   ├── node_availability_chart.py # Node availability
-│   └── node_pie_chart.py         # Node distribution
-│
-├── logs/                         # Log files
-│   └── log.txt                   # Application logs
-│
-├── requirements.txt              # Python dependencies
-├── README.md                     # This file
-└── .gitignore                   # Git ignore rules
-```
-
----
 
 ## 🔧 Configuration Guide
 
@@ -287,29 +274,69 @@ The system tracks and displays:
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Project Structure
 
-### Components
+This repository is organized to support monitoring, simulation, GUI, prediction, and persistence.
 
-1. **Monitor Core** (`src/monitor.py`)
-   - Continuous network monitoring
-   - Data collection and storage
-   - Alert triggering logic
+```
+Network Monitoring & Predictive Failure System/
+├── README.md
+├── PROJECT_UNDERSTANDING.md
+├── requirements.txt
+├── .env                   # optional runtime configuration
+├── logs/
+│   └── log.txt            # monitoring and heartbeat logs
+├── model/
+│   ├── predictor.py       # ML prediction logic
+│   ├── n_w_model.py
+│   ├── n_w_modelV3f_withMetric.py
+│   ├── failurePred_modelv1.py
+│   ├── export_logs.py
+│   ├── logs.csv
+│   ├── updated_logs.csv
+│   └── network_failure_predictor.ipynb
+├── gui/
+│   ├── gui.py
+│   ├── chart.py
+│   ├── global_chart.py
+│   ├── node_availability_chart.py
+│   ├── node_pie_chart.py
+│   ├── alerts.py
+│   ├── summary.py
+│   ├── widgets.py
+│   ├── login_window.py
+│   ├── signup_window.py
+│   ├── theme.py
+│   ├── data.py
+│   └── tempCodeRunnerFile.py
+├── src/
+│   ├── main.py
+│   ├── monitor.py
+│   ├── ping.py
+│   ├── sim_node.py
+│   ├── controller.py
+│   ├── network_profiles.py
+│   ├── config.py
+│   ├── sim_node.py
+│   └── db/
+│       ├── __init__.py
+│       ├── file_log_service.py
+│       ├── log_service.py
+│       ├── mongo.py
+│       └── user_service.py
+└── project pic/           # project graphics and presentation assets
+```
 
-2. **Ping Module** (`src/ping.py`)
-   - ICMP ping implementation
-   - Response time measurement
-   - Packet loss detection
+### Key responsibilities
 
-3. **GUI Layer** (`gui/`)
-   - PySide6-based interface
-   - Real-time visualizations
-   - User interaction handling
-
-4. **Data Manager** (`gui/data.py`)
-   - Data aggregation
-   - Historical storage
-   - Export functionality
+- `src/main.py` — starts the GUI, monitor loop, Controller, and simulated nodes
+- `src/monitor.py` — performs real node ping checks and state evaluation
+- `src/controller.py` — receives simulated node heartbeats and writes logs
+- `src/sim_node.py` — simulates node behavior and generates heartbeat data
+- `src/config.py` — defines monitored nodes, thresholds, and simulation metadata
+- `gui/` — contains PySide6 UI components and dashboard logic
+- `model/` — contains ML models, data exports, and analysis notebooks
+- `db/` — contains local file and MongoDB logging services
 
 ---
 

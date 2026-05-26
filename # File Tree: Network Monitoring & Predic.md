@@ -1,70 +1,69 @@
 # File Tree: Network Monitoring & Predictive Failure System
 
-**Generated:** 12/05/2026, 11:40:50
+**Generated:** 22/05/2026, 09:17:50
 **Root Path:** `/Users/vineetpatel/INTERNSHIP/Project/Network Monitoring & Predictive Failure System`
 
 ```
-├── gui
-│   ├── __init__.py
-│   ├── alerts.py
-│   ├── chart.py
-│   ├── data.py
-│   ├── global_chart.py
-│   ├── gui.py
-│   ├── login_window.py
-│   ├── node_availability_chart.py
-│   ├── node_pie_chart.py
-│   ├── signup_window.py
-│   ├── summary.py
-│   ├── tempCodeRunnerFile.py
-│   ├── theme.py
-│   └── widgets.py
-├── model
-│   ├── export_logs.py
-│   ├── failurePred_modelv1.py
-│   ├── logs.csv
-│   ├── model1.pkl
-│   ├── modelV2.pkl
-│   ├── modelV3.pkl
-│   ├── n_w_modelV3f_withMetric.py
-│   ├── network_failure_predictor.ipynb
-│   ├── predictor.py
-│   └── updated_logs.csv
-├── project pic
-│   ├── Screenshot 2026-04-09 at 8.56.22 PM.png
-│   ├── Screenshot 2026-04-09 at 8.56.39 PM.png
-│   ├── Screenshot 2026-04-09 at 8.58.48 PM.png
-│   ├── Screenshot 2026-04-09 at 8.59.02 PM.png
-│   ├── Screenshot 2026-04-09 at 8.59.12 PM.png
-│   ├── Screenshot 2026-04-09 at 8.59.19 PM.png
-│   ├── Screenshot 2026-04-09 at 8.59.47 PM.png
-│   ├── Screenshot 2026-04-09 at 9.00.36 PM.png
-│   ├── Screenshot 2026-04-09 at 9.01.04 PM.png
-│   ├── Screenshot 2026-04-09 at 9.02.15 PM.png
-│   ├── Screenshot 2026-04-09 at 9.02.32 PM.png
-│   ├── Screenshot 2026-04-09 at 9.04.31 PM.png
-│   └── Screenshot 2026-04-09 at 9.04.47 PM.png
-├── src
-│   ├── db
-│   │   ├── __init__.py
-│   │   ├── file_log_service.py
-│   │   ├── log_service.py
-│   │   ├── mongo.py
-│   │   └── user_service.py
-│   ├── config.py
-│   ├── main.py
-│   ├── monitor.py
-│   ├── ping.py
-│   ├── run_gui.py
-│   └── run_monitor.py
-├── .gitignore
-├── N:W_Model_roadMap.pdf
-├── PROJECT_UNDERSTANDING.md
-├── README.md
-├── future.png
-├── model_explanation.md
-├── network_moniter_complte_report.pdf
-└── requirements.txt
+├── 📁 gui
+│   ├── 🐍 __init__.py
+│   ├── 🐍 alerts.py
+│   ├── 🐍 chart.py
+│   ├── 🐍 data.py
+│   ├── 🐍 global_chart.py
+│   ├── 🐍 gui.py
+│   ├── 🐍 login_window.py
+│   ├── 🐍 node_availability_chart.py
+│   ├── 🐍 node_pie_chart.py
+│   ├── 🐍 signup_window.py
+│   ├── 🐍 summary.py
+│   ├── 🐍 theme.py
+│   └── 🐍 widgets.py
+├── 📁 model
+│   ├── 🐍 export_logs.py
+│   ├── 📄 logs.csv
+│   ├── 📄 modelV3.pkl
+│   ├── 📕 modelV3_Information.pdf
+│   ├── 🐍 n_w_model.py
+│   ├── 🐍 n_w_modelV3f_withMetric.py
+│   ├── 📄 network_failure_predictor.ipynb
+│   ├── 📝 old_vs_new_predictor_report.md
+│   ├── 🐍 predictor.py
+│   └── 📄 updated_logs.csv
+├── 📁 project pic
+│   ├── 🖼️ Screenshot 2026-04-09 at 8.56.22 PM.png
+│   ├── 🖼️ Screenshot 2026-04-09 at 8.56.39 PM.png
+│   ├── 🖼️ Screenshot 2026-04-09 at 8.58.48 PM.png
+│   ├── 🖼️ Screenshot 2026-04-09 at 8.59.02 PM.png
+│   ├── 🖼️ Screenshot 2026-04-09 at 8.59.12 PM.png
+│   ├── 🖼️ Screenshot 2026-04-09 at 8.59.19 PM.png
+│   ├── 🖼️ Screenshot 2026-04-09 at 8.59.47 PM.png
+│   ├── 🖼️ Screenshot 2026-04-09 at 9.00.36 PM.png
+│   ├── 🖼️ Screenshot 2026-04-09 at 9.01.04 PM.png
+│   ├── 🖼️ Screenshot 2026-04-09 at 9.02.15 PM.png
+│   ├── 🖼️ Screenshot 2026-04-09 at 9.02.32 PM.png
+│   ├── 🖼️ Screenshot 2026-04-09 at 9.04.31 PM.png
+│   └── 🖼️ Screenshot 2026-04-09 at 9.04.47 PM.png
+├── 📁 src
+│   ├── 📁 db
+│   │   ├── 🐍 __init__.py
+│   │   ├── 🐍 file_log_service.py
+│   │   ├── 🐍 log_service.py
+│   │   ├── 🐍 mongo.py
+│   │   └── 🐍 user_service.py
+│   ├── 🐍 config.py
+│   ├── 🐍 controller.py
+│   ├── 🐍 main.py
+│   ├── 🐍 monitor.py
+│   ├── 🐍 network_profiles.py
+│   ├── 🐍 ping.py
+│   └── 🐍 sim_node.py
+├── ⚙️ .gitignore
+├── 📕 N:W_Model_roadMap.pdf
+├── 📝 PROJECT_UNDERSTANDING.md
+├── 📝 README.md
+├── 🖼️ future.png
+├── 📝 model_explanation.md
+└── 📄 requirements.txt
 ```
 
 ---
