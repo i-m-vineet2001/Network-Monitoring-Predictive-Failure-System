@@ -1,16 +1,16 @@
 # GUI framework
-PySide6>=6.5
+PySide6==6.10.2
 
 # Optional MongoDB logging
-pymongo>=4.0
+pymongo==4.16.0
 
 # Load .env files
-python-dotenv>=1.0
+python-dotenv==1.2.1
 
-# Machine Learning
-scikit-learn>=1.3
-pandas>=2.0
-matplotlib>=3.7
-seaborn>=0.12
+# Data science and ML
+numpy==2.4.2
+pandas==3.0.2
+scikit-learn==1.8.0
+matplotlib==3.10.8
 
 

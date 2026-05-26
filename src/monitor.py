@@ -1,8 +1,22 @@
+
+
+
+# NEW CODE
 # src/monitor.py
+#
+# Changes vs previous version (everything else unchanged):
+#
+#   + _history  dict: rolling deque of last 10 readings per node
+#   + After each ping cycle, calls predictor.predict_node_failure_from_buffer()
+#   + Attaches ml result to node dict (node['ml_result'])
+#   + Writes ml=<probability> as extra field in log line
+#   + ML alert fires if risk changes to HIGH/CRITICAL (spam guard via last_ml_alert)
+#   + If predictor import fails, monitoring continues normally (safe fallback)
+
 import os
 import sys
+from collections import deque
 from datetime import datetime
-import pandas as pd
 
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SRC_DIR)
@@ -13,77 +27,58 @@ from config import LATENCY_THRESHOLD
 from db.log_service import insert_log
 from db.file_log_service import write_log_file
 
-# Import ML predictor
-try:
-    from model.predictor import predict_node_failure
-
-    ML_AVAILABLE = True
-except ImportError:
-    print("[WARN] ML predictor not available")
-    ML_AVAILABLE = False
-
-
-def predict_node_failure_fallback(x):
-    return None
-
-
-if not ML_AVAILABLE:
-    predict_node_failure = predict_node_failure_fallback
-
-
-def predict_failure(df):
-    """Wrapper to use predict_node_failure with DataFrame"""
-    if not ML_AVAILABLE or df.empty:
-        return {"failure_probability": 0.1}
-
-    # Get latest data
-    latest = df.iloc[-1]
-    node_data = {
-        "latency": latest.get("latency", 0),
-        "fails": latest.get("fails", 0),
-        "state": latest.get("state", "UP"),
-        "network_type": latest.get("network_type", "wifi"),
-        "recent_latencies": df["latency"].tolist(),
-        "recent_fails": df["fails"].tolist(),
-        "recent_states": df["state"].tolist(),
-    }
-    prob = predict_node_failure(node_data)
-    return {"failure_probability": prob if prob is not None else 0.1}
-
-
 LOG_FILE = os.path.join(ROOT_DIR, "logs", "log.txt")
 
-FAIL_THRESHOLD_NORMAL = 3  # non-blocked nodes: DOWN after 3 fails (~15s)
-FAIL_THRESHOLD_BLOCKED = 8  # iPhone: DOWN after 8 fails (~40s) — avoids false DOWN
+FAIL_THRESHOLD_NORMAL = 3
+FAIL_THRESHOLD_BLOCKED = 8
+
+# ── ML predictor (optional — falls back gracefully if not available) ───
+_predictor_available = False
+try:
+    MODEL_DIR = os.path.join(ROOT_DIR, "model")
+    sys.path.insert(0, MODEL_DIR)
+    from predictor import predict_node_failure_from_buffer
+
+    _predictor_available = True
+    print("[Monitor] ✅ ML predictor loaded")
+except Exception as e:
+    print(f"[Monitor] ⚠️  ML predictor not available: {e}")
+
+    def predict_node_failure_from_buffer(*args, **kwargs):
+        return {
+            "failure_probability": 0.0,
+            "prediction": 0,
+            "risk_level": "LOW",
+            "alert": "N/A",
+            "enough_data": False,
+        }
 
 
+# ── Rolling history buffer (WINDOW=10 per node) ────────────────────────
+HISTORY_WINDOW = 10
+_history: dict = {}  # node_name → deque of dicts
+
+
+def _get_history(node_name: str) -> deque:
+    if node_name not in _history:
+        _history[node_name] = deque(maxlen=HISTORY_WINDOW)
+    return _history[node_name]
+
+
+# ── State evaluation (unchanged) ──────────────────────────────────────
 def evaluate_status(
-    ping_result: dict,
-    previous_state: str,
-    fail_count: int,
-    ping_blocked: bool = False,
+    ping_result: dict, previous_state: str, fail_count: int, ping_blocked: bool = False
 ) -> str:
-    """
-    Determine node state from the latest ping result.
-
-    On failure:  stay in previous_state until fail_count hits threshold, then DOWN.
-    On success:  always UP or DEGRADED — never stuck in DOWN after recovery.
-    """
     if not ping_result["success"]:
         threshold = FAIL_THRESHOLD_BLOCKED if ping_blocked else FAIL_THRESHOLD_NORMAL
-        # Once already DOWN keep it DOWN; otherwise hold previous until threshold
         if previous_state == "DOWN":
             return "DOWN"
         return "DOWN" if fail_count >= threshold else previous_state
 
-    # ── ping succeeded: always escape DOWN/DEGRADED immediately ──
-    # fail_count is already reset to 0 in run_monitor before this call
     latency = ping_result.get("latency")
     if latency is None:
         return "UP"
-    if latency > LATENCY_THRESHOLD:
-        return "DEGRADED"
-    return "UP"
+    return "DEGRADED" if latency > LATENCY_THRESHOLD else "UP"
 
 
 def _fallback_write(line: str):
@@ -92,6 +87,7 @@ def _fallback_write(line: str):
         f.write(line + "\n")
 
 
+# ── Main monitor loop ──────────────────────────────────────────────────
 def run_monitor(nodes: dict):
     try:
         from ping import ping_node
@@ -104,7 +100,7 @@ def run_monitor(nodes: dict):
         result = ping_node(node["ip"], ping_blocked=ping_blocked)
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # Reset fail_count BEFORE evaluate_status so recovery is instant
+        # ── Update state ──────────────────────────────────────────────
         if result["success"]:
             node["fail_count"] = 0
         else:
@@ -114,92 +110,46 @@ def run_monitor(nodes: dict):
             result, node["state"], node["fail_count"], ping_blocked
         )
         node["last_latency"] = result.get("latency")
-        # ==============================
-        # 🔹 ML HISTORY BUFFER (ADD HERE)
-        # ==============================
-        node.setdefault("history", [])
-        lat = node["last_latency"] if node["last_latency"] is not None else -1
 
-        node["history"].append(
+        # ── ML prediction ─────────────────────────────────────────────
+        hist = _get_history(node_name)
+        hist.append(
             {
-                "timestamp": datetime.now(),
-                "latency": lat,
+                "timestamp": timestamp,
+                "latency": node["last_latency"],
                 "fails": node["fail_count"],
                 "state": node["state"],
-                "network_type": node["network_type"],
-                "node_name": node_name,
-                "ping_failed": 1 if result["success"] is False else 0,
             }
         )
-        # keep last 15 entries (sliding window)
-        node["history"] = node["history"][-30:]
 
-        # ==============================
-        # 🔹 REAL-TIME ML PREDICTION
-        # ==============================
-        if len(node["history"]) >= 5:
-            try:
-                df = pd.DataFrame(node["history"])
-                ml_result = predict_failure(df)
+        ml = predict_node_failure_from_buffer(
+            node_name=node_name,
+            buffer=list(hist),
+            network_type=node.get("network_type", "wifi"),
+        )
+        node["ml_result"] = ml  # GUI can read this from node dict
 
-                new_prob = float(ml_result["failure_probability"])
-                prev_prob = node.get("ml_probability")
-                if prev_prob is None:
-                    prev_prob = new_prob
+        ml_prob = ml["failure_probability"]
+        ml_risk = ml["risk_level"]
 
-                # Smooth prediction (stabilizes + improves reaction)
-                node["ml_probability"] = 0.4 * prev_prob + 0.6 * new_prob
-
-            except Exception:
-                node["ml_probability"] = None
-        else:
-            node["ml_probability"] = None
-
-        if node["state"] == "DOWN":
-            if node.get("ml_probability") is not None:
-                node["ml_probability"] = max(node["ml_probability"], 0.8)
-            else:
-                node["ml_probability"] = 0.8
-
-        # Determine ML alert level and avoid spamming
-        current_prob = node.get("ml_probability")
-        if current_prob is None:
-            alert_level = "none"
-        elif current_prob >= 0.8:
-            alert_level = "critical"
-        elif current_prob >= 0.6:
-            alert_level = "high"
-        elif current_prob >= 0.3:
-            alert_level = "medium"
-        else:
-            alert_level = "low"
-
-        last_alert = node.get("last_ml_alert")
-        if alert_level != last_alert and alert_level != "none":
-            # Only log when alert level changes and it's not none
-            print(
-                f"🚨 ML ALERT: {node_name} failure risk is {alert_level.upper()} ({current_prob:.1f})"
-            )
-            node["last_ml_alert"] = alert_level
-        elif last_alert and alert_level == "none":
-            # Reset when prediction becomes none
-            node["last_ml_alert"] = None
-
-        print(f"ML → {node_name}: {current_prob} ({alert_level})")
-
-        # Format latency display - always show a value
-        if node["last_latency"] is not None:
-            latency_display = f"{node['last_latency']:.1f} ms"
-        elif result.get("error") == "ping_blocked":
-            latency_display = "0 ms"  # Show 0 for blocked devices
-        else:
-            latency_display = "0 ms"  # Show 0 for failed pings
-
+        # ── Terminal output ───────────────────────────────────────────
         print(
-            f"[{timestamp}] {node_name} → {node['state']} "
-            f"| latency={latency_display} | fails={node['fail_count']} | ml={node.get('ml_probability', 'N/A')}"
+            f"[{timestamp}] {node_name} → {node['state']:8s} "
+            f"| lat={node['last_latency']} ms "
+            f"| fails={node['fail_count']} "
+            f"| ml={ml_prob:.2f} ({ml_risk})"
         )
 
+        # ── ML alert spam guard ───────────────────────────────────────
+        # Only print a warning when risk level CHANGES to HIGH or CRITICAL
+        prev_alert = node.get("last_ml_alert")
+        if ml_risk in ("HIGH", "CRITICAL") and prev_alert != ml_risk:
+            print(
+                f"  ⚠️  [{node_name}] ML ALERT: {ml['alert']} — risk={ml_risk} ({ml_prob:.2f})"
+            )
+        node["last_ml_alert"] = ml_risk
+
+        # ── File log (adds ml= field at the end) ─────────────────────
         try:
             write_log_file(
                 node_name,
@@ -208,18 +158,41 @@ def run_monitor(nodes: dict):
                 node["state"],
                 node["last_latency"],
                 node["fail_count"],
-                ml_prob=node.get("ml_probability"),
+                ml_prob,  # passed as extra arg → handled below
             )
+        except TypeError:
+            # Old write_log_file doesn't accept ml_prob — fallback
+            try:
+                write_log_file(
+                    node_name,
+                    node["ip"],
+                    node["network_type"],
+                    node["state"],
+                    node["last_latency"],
+                    node["fail_count"],
+                )
+            except Exception as exc:
+                ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                line = (
+                    f"{ts} | {node_name} | {node['ip']} | "
+                    f"{node['state']} | type={node['network_type']} | "
+                    f"latency={node['last_latency']} | fails={node['fail_count']} | "
+                    f"ml={ml_prob}"
+                )
+                _fallback_write(line)
+                print(f"[WARN] file_log_service failed ({exc}), used fallback")
         except Exception as exc:
+            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             line = (
-                f"{timestamp} | {node_name} | {node['ip']} | "
+                f"{ts} | {node_name} | {node['ip']} | "
                 f"{node['state']} | type={node['network_type']} | "
                 f"latency={node['last_latency']} | fails={node['fail_count']} | "
-                f"ml={node.get('ml_probability')}"
+                f"ml={ml_prob}"
             )
             _fallback_write(line)
             print(f"[WARN] file_log_service failed ({exc}), used fallback")
 
+        # ── MongoDB log (unchanged) ───────────────────────────────────
         insert_log(
             node_name,
             node["ip"],

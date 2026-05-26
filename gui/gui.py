@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QLabel,
     QFrame,
+    QSizePolicy,
 )
 from PySide6.QtCore import QTimer, Qt
 
@@ -255,13 +256,16 @@ class NetworkMonitorGUI(QMainWindow):
         )
 
         self.node_list = NodeListWidget()
+        # allow the node list to expand vertically to fill the sidebar
+        self.node_list.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.node_list.itemClicked.connect(self._on_node_clicked)
 
         sb.addWidget(app_title)
         sb.addWidget(app_sub)
         sb.addSpacing(8)
         sb.addWidget(nodes_hdr)
-        sb.addWidget(self.node_list)
+        # give the node list a stretch factor so it fills remaining sidebar height
+        sb.addWidget(self.node_list, 1)
         sb.addStretch()
         root_lay.addWidget(sidebar)
 

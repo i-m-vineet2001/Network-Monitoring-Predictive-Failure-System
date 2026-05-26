@@ -52,6 +52,77 @@ Traditional network monitoring is **reactive** — you only know about failures 
 
 ---
 
+## Recent Updates (May 2026)
+
+### Key production fixes completed
+
+- **Simulated nodes now run in production mode** by starting the Controller server and all `sim_nodes` threads from `src/main.py`.
+- **Controller now receives heartbeat JSON from SimNode clients** and writes real node data to `logs/log.txt`, matching the real monitor logging format.
+- **GUI now prefers real log data** and uses the old config fallback only at startup before the first heartbeat arrives.
+- **Chart and availability widgets now show actual simulated network health** instead of placeholder fallback values.
+- **Node list section height was fixed** by expanding the sidebar widget and giving the node list a stretch factor.
+- **Alert refresh auto-scroll bug fixed** by refreshing the node list only when node states actually change, preventing bottom-node selection from jumping on alert updates.
+
+### Why this matters
+
+- In production, simulated nodes must behave like real devices: they should send true heartbeats, not only appear from config defaults.
+- The Controller must ingest those heartbeats and log them in the same format used by the GUI.
+- A production-grade system should avoid UI artifacts like selection jumps during alert refresh.
+
+### Requirements covered by these changes
+
+- `src/main.py` now orchestrates:
+  - real node monitor (`run_monitor(nodes)`)
+  - simulated nodes (`SimNode.start_thread()` for each `sim_nodes` entry)
+  - Controller server (`start_controller_thread()`)
+- `src/controller.py` continues to:
+  - accept socket connections from SimNodes
+  - parse newline-delimited JSON heartbeats
+  - update shared node state
+  - write standard logs via `db.file_log_service`
+- `gui/data.py` now:
+  - reads the log file for real node state
+  - uses `config.all_nodes` only as a startup fallback
+  - avoids fake zero graphs except before any heartbeat data exists
+- `gui/widgets.py` now:
+  - preserves scroll position during refresh
+  - skips refresh on latency-only updates
+  - re-selects the active node without causing auto-scroll
+
+## How to run the updated system
+
+To run the updated production-ready monitoring system with simulated nodes enabled:
+
+1. Activate the virtual environment:
+
+```bash
+source venv/bin/activate
+```
+
+2. Start the application from the project root:
+
+```bash
+python src/main.py
+```
+
+3. Expected startup behavior:
+
+- `Controller server` starts and listens on `127.0.0.1:9000`
+- `SimNode` threads start for each node in `config.sim_nodes`
+- `run_monitor(nodes)` begins pinging real nodes every 5 seconds
+- `logs/log.txt` receives entries from both real and simulated nodes
+- GUI reads log data and renders real latency/state values
+
+4. If port `9000` is already in use, stop the previous process or change the controller port in `src/controller.py` and `src/main.py`.
+
+5. Validate system health by ensuring the GUI displays:
+
+- active nodes from both `real_nodes` and `sim_nodes`
+- latency history and availability data for simulated nodes
+- stable node selection without auto-scrolling when alerts arrive
+
+---
+
 ## Technology Stack
 
 ### Core Framework & GUI
